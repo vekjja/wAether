@@ -2,5 +2,5 @@ go 1.23.5
 
 use (
 	.
-	/Users/kjj/git/gotoolbox/openweather
+	/Users/kjj/git/gotoolbox/openWeather
 )
