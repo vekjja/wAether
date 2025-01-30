@@ -3,7 +3,7 @@ package cmd
 import (
 	"os"
 
-	ow "github.com/seemywingz/gotoolbox/openWeather"
+	openWeather "github.com/seemywingz/openWeatherGO"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +19,7 @@ var rootCmd = &cobra.Command{
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ow.Now()
+		openWeather.Now()
 	},
 }
 
