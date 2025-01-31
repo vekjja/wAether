@@ -63,7 +63,7 @@ var rootCmd = &cobra.Command{
 		}
 		fmt.Printf("📍: %s: %s - %s %v\n", location, weatherData.Current.Weather[0].Main, weatherData.Current.Weather[0].Description, openWeather.GetIcon(weatherData.Current.Weather[0].Icon))
 		fmt.Println("ℹ️ :", weatherData.Daily[0].Summary)
-		fmt.Println("⌚️:", toolbox.LocalTime(weatherData.Current.Dt, weatherData.TimezoneOffset, weatherData.Timezone, ""), openWeather.GetMoonPhaseIcon(weatherData.Daily[0].MoonPhase))
+		fmt.Println("⌚️:", toolbox.TimeUTC(weatherData.Current.Dt, weatherData.TimezoneOffset, weatherData.Timezone, ""), openWeather.GetMoonPhaseIcon(weatherData.Daily[0].MoonPhase))
 		fmt.Printf("🌡️ : %.2f %s", weatherData.Current.Temp, openWeather.GetUnitSymbol(unit))
 		if weatherData.Current.FeelsLike != weatherData.Current.Temp {
 			fmt.Printf(" (feels like %.2f %s)", weatherData.Current.FeelsLike, openWeather.GetUnitSymbol(unit))
@@ -82,8 +82,12 @@ var rootCmd = &cobra.Command{
 		if weatherData.Current.Visibility < 10000 || verbose > 1 {
 			fmt.Printf("👓: %d m\n", weatherData.Current.Visibility)
 		}
-		fmt.Printf("🌅: %s\n", toolbox.LocalTime(weatherData.Current.Sunrise, weatherData.TimezoneOffset, weatherData.Timezone, "3:04 PM MST"))
-		fmt.Printf("🌇: %s\n", toolbox.LocalTime(weatherData.Current.Sunset, weatherData.TimezoneOffset, weatherData.Timezone, "3:04 PM"))
+		format := "3:04 PM"
+		if verbose > 0 {
+			format = "3:04:05 PM MST"
+		}
+		fmt.Printf("🌅: %s\n", toolbox.TimeUTC(weatherData.Current.Sunrise, weatherData.TimezoneOffset, weatherData.Timezone, format))
+		fmt.Printf("🌇: %s\n", toolbox.TimeUTC(weatherData.Current.Sunset, weatherData.TimezoneOffset, weatherData.Timezone, format))
 		if weatherData.Current.Uvi > 3 || verbose > 1 {
 			fmt.Printf("🔆: %.2f\n", weatherData.Current.Uvi)
 		}
