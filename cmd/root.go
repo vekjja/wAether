@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/seemywingz/go-toolbox"
 	openWeather "github.com/seemywingz/openWeatherGO"
@@ -22,25 +23,26 @@ var rootCmd = &cobra.Command{
   All Weather data comes from OpenWeather API.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := openWeather.Init()
-		toolbox.EoE(err, "Error Initializing OpenWeatherMap: ")
 
 		if location != "" {
-			geoData, err := openWeather.GetGeoData(location)
+			geoData, err := toolbox.GetGeoData(location)
 			toolbox.EoE(err, "Error getting GeoData: ")
-			lat = geoData[0].Lat
-			long = geoData[0].Lon
+			location = geoData[0].DisplayName
+			lat, err = strconv.ParseFloat(geoData[0].Lat, 64)
+			toolbox.EoE(err, "Error converting Latitude: ")
+			long, err = strconv.ParseFloat(geoData[0].Lon, 64)
+			toolbox.EoE(err, "Error converting Longitude: ")
 		} else {
-			ipInfo, err := toolbox.GetIPInfo()
+			ipData, err := toolbox.GetIPData()
 			toolbox.EoE(err, "Error getting Location from IP: ")
-			lat = ipInfo.Latitude
-			long = ipInfo.Longitude
+			lat = ipData.Latitude
+			long = ipData.Longitude
 		}
 
 		if verbose {
-			fmt.Println("Location: ", location)
-			fmt.Println("Latitude: ", lat)
-			fmt.Println("Longitude: ", long)
+			fmt.Println("Location:", location)
+			fmt.Println("Latitude:", lat)
+			fmt.Println("Longitude:", long)
 		}
 
 		openWeather.Now()
