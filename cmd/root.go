@@ -65,10 +65,8 @@ var rootCmd = &cobra.Command{
 		// Go snippet for local time conversion
 		utcSeconds := int64(weatherData.Current.Dt) // UTC-based seconds
 		offsetSecs := int(weatherData.TimezoneOffset)
-
 		// Create a *time.Location with the correct offset
 		loc := time.FixedZone("LocalTime", offsetSecs)
-
 		// Convert the UTC timestamp to “local time” by .In(loc)
 		localTime := time.Unix(utcSeconds, 0).In(loc)
 
