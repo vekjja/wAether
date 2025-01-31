@@ -24,20 +24,17 @@ var rootCmd = &cobra.Command{
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		if location != "" {
-			geoData, err := toolbox.GetGeoData(location)
-			toolbox.EoE(err, "Error getting GeoData: ")
-			location = geoData[0].DisplayName
-			lat, err = strconv.ParseFloat(geoData[0].Lat, 64)
-			toolbox.EoE(err, "Error converting Latitude: ")
-			long, err = strconv.ParseFloat(geoData[0].Lon, 64)
-			toolbox.EoE(err, "Error converting Longitude: ")
-		} else {
-			ipData, err := toolbox.GetIPData()
-			toolbox.EoE(err, "Error getting Location from IP: ")
-			lat = ipData.Latitude
-			long = ipData.Longitude
+		if location == "" {
+			toolbox.EoE(fmt.Errorf("Location is required"), "Error: ")
 		}
+
+		geoData, err := toolbox.GetGeoData(location)
+		toolbox.EoE(err, "Error getting GeoData: ")
+		location = geoData[0].DisplayName
+		lat, err = strconv.ParseFloat(geoData[0].Lat, 64)
+		toolbox.EoE(err, "Error converting Latitude: ")
+		long, err = strconv.ParseFloat(geoData[0].Lon, 64)
+		toolbox.EoE(err, "Error converting Longitude: ")
 
 		fmt.Println()
 		fmt.Println("Location:", location)
@@ -72,4 +69,5 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&location, "location", "l", "", "location to get weather information")
 	rootCmd.PersistentFlags().StringVarP(&unit, "unit", "u", "metric", "unit of measurement (metric, imperial, standard)")
 
+	rootCmd.MarkPersistentFlagRequired("location")
 }
