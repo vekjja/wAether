@@ -6,6 +6,7 @@ import (
 	_ "image/png" // Enable PNG decoding
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/seemywingz/go-toolbox"
 	openWeather "github.com/seemywingz/openWeatherGO"
@@ -54,19 +55,30 @@ var rootCmd = &cobra.Command{
 
 		// Print standard weather info
 		fmt.Println()
-		fmt.Println("📍:", location, openWeather.GetIconEmoji(weatherData.Current.Weather[0].Icon))
+		fmt.Printf("📍: %s: %s - %s %v\n", location, weatherData.Current.Weather[0].Main, weatherData.Current.Weather[0].Description, openWeather.GetIconEmoji(weatherData.Current.Weather[0].Icon))
 		if verbose {
 			fmt.Println("Latitude:", lat)
 			fmt.Println("Longitude:", long)
 		}
 
-		fmt.Println("⌚️:", toolbox.FormatTime(int64(weatherData.Current.Dt)))
+		// Print current time in the location's timezone
+		// Go snippet for local time conversion
+		utcSeconds := int64(weatherData.Current.Dt) // UTC-based seconds
+		offsetSecs := int(weatherData.TimezoneOffset)
+
+		// Create a *time.Location with the correct offset
+		loc := time.FixedZone("LocalTime", offsetSecs)
+
+		// Convert the UTC timestamp to “local time” by .In(loc)
+		localTime := time.Unix(utcSeconds, 0).In(loc)
+
+		fmt.Println("⌚️:", localTime.Format("Mon, Jan, 2 - 03:04 PM"), openWeather.GetTimeZoneTLA(weatherData.Timezone))
 		fmt.Printf("🌡️ : %.2f %s feels like %.2f %s \n", weatherData.Current.Temp, openWeather.GetUnitSymbol(unit), weatherData.Current.FeelsLike, openWeather.GetUnitSymbol(unit))
-		fmt.Printf("💨: %.2f m/s\n", weatherData.Current.WindSpeed)
+		fmt.Printf("💨: %.2f %s\n", weatherData.Current.WindSpeed, openWeather.GetUnitSpeed(unit))
 		fmt.Printf("💧: %d%%\n", weatherData.Current.Humidity)
 		fmt.Printf("👓: %d m\n", weatherData.Current.Visibility)
-		fmt.Printf("🌅: %s\n", toolbox.FormatTime(int64(weatherData.Current.Sunrise)))
-		fmt.Printf("🌇: %s\n", toolbox.FormatTime(int64(weatherData.Current.Sunset)))
+		fmt.Printf("🌅: %s %s\n", time.Unix(int64(weatherData.Current.Sunrise), 0).In(loc).Format("3:04 PM"), openWeather.GetTimeZoneTLA(weatherData.Timezone))
+		fmt.Printf("🌇: %s %s\n", time.Unix(int64(weatherData.Current.Sunset), 0).In(loc).Format("3:04 PM"), openWeather.GetTimeZoneTLA(weatherData.Timezone))
 	},
 }
 
