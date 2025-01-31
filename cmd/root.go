@@ -82,12 +82,12 @@ var rootCmd = &cobra.Command{
 		if weatherData.Current.Visibility < 10000 || verbose > 1 {
 			fmt.Printf("👓: %d m\n", weatherData.Current.Visibility)
 		}
-		format := "3:04 PM"
+		timeFormat := "3:04 PM"
 		if verbose > 0 {
-			format = "3:04:05 PM MST"
+			timeFormat = "3:04:05 PM MST"
 		}
-		fmt.Printf("🌅: %s\n", toolbox.TimeUTC(weatherData.Current.Sunrise, weatherData.TimezoneOffset, weatherData.Timezone, format))
-		fmt.Printf("🌇: %s\n", toolbox.TimeUTC(weatherData.Current.Sunset, weatherData.TimezoneOffset, weatherData.Timezone, format))
+		fmt.Printf("🌅: %s\n", toolbox.TimeUTC(weatherData.Current.Sunrise, weatherData.TimezoneOffset, weatherData.Timezone, timeFormat))
+		fmt.Printf("🌇: %s\n", toolbox.TimeUTC(weatherData.Current.Sunset, weatherData.TimezoneOffset, weatherData.Timezone, timeFormat))
 		if weatherData.Current.Uvi > 3 || verbose > 1 {
 			fmt.Printf("🔆: %.2f\n", weatherData.Current.Uvi)
 		}
