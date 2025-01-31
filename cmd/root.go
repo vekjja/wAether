@@ -3,17 +3,16 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	_ "image/png" // Enable PNG decoding
 	"os"
 	"strconv"
 
+	owm "github.com/seemywingz/go-openweather"
 	"github.com/seemywingz/go-toolbox"
-	openWeather "github.com/seemywingz/openWeatherGO"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var verbose int
-var location, unit string
 var lat, lon float64
 
 var rootCmd = &cobra.Command{
@@ -24,15 +23,11 @@ var rootCmd = &cobra.Command{
   All Weather data comes from OpenWeather API.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Validate unit
-		if _, ok := openWeather.ValidUnits[unit]; !ok {
-			toolbox.EoE(fmt.Errorf("Invalid unit: %s", unit), "Error: ")
-		}
 
 		// Get the geo data
-		geoData, err := toolbox.GetGeoData(location)
+		geoData, err := toolbox.GetGeoData(viper.GetString("location"))
 		toolbox.EoE(err, "Error getting GeoData: ")
-		location = geoData[0].DisplayName
+		location := geoData[0].DisplayName
 
 		lat, err = strconv.ParseFloat(geoData[0].Lat, 64)
 		toolbox.EoE(err, "Error converting Latitude: ")
@@ -41,10 +36,10 @@ var rootCmd = &cobra.Command{
 		toolbox.EoE(err, "Error converting Longitude: ")
 
 		// Get weather data
-		weatherData, err := openWeather.Get(lat, lon, unit)
+		weatherData, err := owm.Get(lat, lon, viper.GetString("unit"))
 		toolbox.EoE(err, "Error getting Weather Data: ")
 
-		// If verbose, show raw JSON data
+		// If vvverbose, show raw JSON data
 		if verbose > 2 {
 			fmt.Println("Weather Data:")
 			j, err := json.Marshal(weatherData)
@@ -61,16 +56,16 @@ var rootCmd = &cobra.Command{
 				fmt.Println()
 			}
 		}
-		fmt.Printf("📍: %s: %s - %s %v\n", location, weatherData.Current.Weather[0].Main, weatherData.Current.Weather[0].Description, openWeather.GetIcon(weatherData.Current.Weather[0].Icon))
+		fmt.Printf("📍: %s: %s - %s %v\n", location, weatherData.Current.Weather[0].Main, weatherData.Current.Weather[0].Description, owm.Icon(weatherData.Current.Weather[0].Icon))
 		fmt.Println("ℹ️ :", weatherData.Daily[0].Summary)
-		fmt.Println("⌚️:", toolbox.TimeUTC(weatherData.Current.Dt, weatherData.TimezoneOffset, weatherData.Timezone, ""), openWeather.GetMoonPhaseIcon(weatherData.Daily[0].MoonPhase))
-		fmt.Printf("🌡️ : %.2f %s", weatherData.Current.Temp, openWeather.GetUnitSymbol(unit))
-		if weatherData.Current.FeelsLike != weatherData.Current.Temp {
-			fmt.Printf(" (feels like %.2f %s)", weatherData.Current.FeelsLike, openWeather.GetUnitSymbol(unit))
+		fmt.Println("⌚️:", toolbox.TimeUTC(weatherData.Current.Dt, weatherData.TimezoneOffset, weatherData.Timezone, ""), owm.MoonPhaseIcon(weatherData.Daily[0].MoonPhase))
+		fmt.Printf("🌡️ : %.2f %s", weatherData.Current.Temp, owm.UnitSymbol(viper.GetString("unit")))
+		if weatherData.Current.FeelsLike != weatherData.Current.Temp || verbose > 0 {
+			fmt.Printf(" (feels like %.2f %s)", weatherData.Current.FeelsLike, owm.UnitSymbol(viper.GetString("unit")))
 		}
 		fmt.Println()
 		if weatherData.Current.WindSpeed > 0 || verbose > 1 {
-			fmt.Printf("💨: %.2f %s\n", weatherData.Current.WindSpeed, openWeather.GetUnitSpeed(unit))
+			fmt.Printf("💨: %.2f %s\n", weatherData.Current.WindSpeed, owm.UnitSpeed(viper.GetString("unit")))
 		}
 		if weatherData.Current.Rain.OneH > 0 || verbose > 1 {
 			fmt.Printf("🌧️ : %.2f mm\n", weatherData.Current.Rain.OneH)
@@ -88,7 +83,7 @@ var rootCmd = &cobra.Command{
 		}
 		fmt.Printf("🌅: %s\n", toolbox.TimeUTC(weatherData.Current.Sunrise, weatherData.TimezoneOffset, weatherData.Timezone, timeFormat))
 		fmt.Printf("🌇: %s\n", toolbox.TimeUTC(weatherData.Current.Sunset, weatherData.TimezoneOffset, weatherData.Timezone, timeFormat))
-		if weatherData.Current.Uvi > 3 || verbose > 1 {
+		if weatherData.Current.Uvi > 3 || verbose > 0 {
 			fmt.Printf("🔆: %.2f\n", weatherData.Current.Uvi)
 		}
 	},
@@ -102,9 +97,13 @@ func Execute() {
 }
 
 func init() {
+	initConfig("waether", "config")
 	rootCmd.PersistentFlags().CountVarP(&verbose, "verbose", "v", "Increase verbosity (-v, -vv, -vvv)")
-	rootCmd.PersistentFlags().StringVarP(&location, "location", "l", "", "location to get weather information")
-	rootCmd.PersistentFlags().StringVarP(&unit, "unit", "u", "metric", "unit of measurement (metric, imperial, standard)")
 
-	rootCmd.MarkPersistentFlagRequired("location")
+	rootCmd.PersistentFlags().StringP("location", "l", viper.GetString("location"), "location to get weather data for")
+	viper.BindPFlag("location", rootCmd.PersistentFlags().Lookup("location"))
+
+	rootCmd.PersistentFlags().StringP("unit", "u", "metric", "unit of measure")
+	rootCmd.PersistentFlags().SetAnnotation("unit", cobra.BashCompOneRequiredFlag, owm.ValidUnits)
+	viper.BindPFlag("unit", rootCmd.PersistentFlags().Lookup("unit"))
 }
