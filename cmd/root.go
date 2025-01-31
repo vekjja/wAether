@@ -36,7 +36,7 @@ var rootCmd = &cobra.Command{
 		toolbox.EoE(err, "Error converting Longitude: ")
 
 		// Get weather data
-		weatherData, err := owm.Get(lat, lon, viper.GetString("unit"))
+		weatherData, err := owm.Get(lat, lon, viper.GetString("unit"), viper.GetString("api_key"))
 		toolbox.EoE(err, "Error getting Weather Data: ")
 
 		// If vvverbose, show raw JSON data
