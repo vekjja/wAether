@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	_ "image/png" // Enable PNG decoding
 	"os"
 	"strconv"
 
@@ -12,7 +14,6 @@ import (
 
 var verbose bool
 var location, unit string
-
 var lat, long float64
 
 var rootCmd = &cobra.Command{
@@ -23,37 +24,49 @@ var rootCmd = &cobra.Command{
   All Weather data comes from OpenWeather API.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		if location == "" {
-			toolbox.EoE(fmt.Errorf("Location is required"), "Error: ")
+		// Validate unit
+		if _, ok := openWeather.ValidUnits[unit]; !ok {
+			toolbox.EoE(fmt.Errorf("Invalid unit: %s", unit), "Error: ")
 		}
 
+		// Get the geo data
 		geoData, err := toolbox.GetGeoData(location)
 		toolbox.EoE(err, "Error getting GeoData: ")
 		location = geoData[0].DisplayName
+
 		lat, err = strconv.ParseFloat(geoData[0].Lat, 64)
 		toolbox.EoE(err, "Error converting Latitude: ")
+
 		long, err = strconv.ParseFloat(geoData[0].Lon, 64)
 		toolbox.EoE(err, "Error converting Longitude: ")
 
-		fmt.Println()
-		fmt.Println("Location:", location)
+		// Get weather data
+		weatherData, err := openWeather.Get(lat, long, unit)
+		toolbox.EoE(err, "Error getting Weather Data: ")
 
+		// If verbose, show raw JSON data
+		if verbose {
+			fmt.Println("Weather Data:")
+			j, err := json.Marshal(weatherData)
+			toolbox.EoE(err, "Error marshalling JSON: ")
+			toolbox.PrettyJson(j)
+		}
+
+		// Print standard weather info
+		fmt.Println()
+		fmt.Println("📍:", location, openWeather.GetIconEmoji(weatherData.Current.Weather[0].Icon))
 		if verbose {
 			fmt.Println("Latitude:", lat)
 			fmt.Println("Longitude:", long)
 		}
 
-		weatherData, err := openWeather.Get(lat, long, unit)
-		toolbox.EoE(err, "Error getting Weather Data: ")
-
-		// Print the weather data
-		fmt.Printf("Temperature: %.2f %s\n", weatherData.Current.Temp, openWeather.GetUnitSymbol(unit))
-		fmt.Printf("Feels Like: %.2f %s\n", weatherData.Current.FeelsLike, openWeather.GetUnitSymbol(unit))
-		fmt.Println("Pressure:", weatherData.Current.Pressure, "hPa")
-		fmt.Println("Humidity:", weatherData.Current.Humidity, "%")
-		fmt.Printf("Dew Point: %.2f %s\n", weatherData.Current.DewPoint, openWeather.GetUnitSymbol(unit))
-		fmt.Println("UV Index:", weatherData.Current.Uvi)
+		fmt.Println("⌚️:", toolbox.FormatTime(int64(weatherData.Current.Dt)))
+		fmt.Printf("🌡️ : %.2f %s feels like %.2f %s \n", weatherData.Current.Temp, openWeather.GetUnitSymbol(unit), weatherData.Current.FeelsLike, openWeather.GetUnitSymbol(unit))
+		fmt.Printf("💨: %.2f m/s\n", weatherData.Current.WindSpeed)
+		fmt.Printf("💧: %d%%\n", weatherData.Current.Humidity)
+		fmt.Printf("👓: %d m\n", weatherData.Current.Visibility)
+		fmt.Printf("🌅: %s\n", toolbox.FormatTime(int64(weatherData.Current.Sunrise)))
+		fmt.Printf("🌇: %s\n", toolbox.FormatTime(int64(weatherData.Current.Sunset)))
 	},
 }
 
