@@ -6,16 +6,15 @@ import (
 	_ "image/png" // Enable PNG decoding
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/seemywingz/go-toolbox"
 	openWeather "github.com/seemywingz/openWeatherGO"
 	"github.com/spf13/cobra"
 )
 
-var verbose bool
+var verbose int
 var location, unit string
-var lat, long float64
+var lat, lon float64
 
 var rootCmd = &cobra.Command{
 	Use:   "wAether",
@@ -38,45 +37,56 @@ var rootCmd = &cobra.Command{
 		lat, err = strconv.ParseFloat(geoData[0].Lat, 64)
 		toolbox.EoE(err, "Error converting Latitude: ")
 
-		long, err = strconv.ParseFloat(geoData[0].Lon, 64)
+		lon, err = strconv.ParseFloat(geoData[0].Lon, 64)
 		toolbox.EoE(err, "Error converting Longitude: ")
 
 		// Get weather data
-		weatherData, err := openWeather.Get(lat, long, unit)
+		weatherData, err := openWeather.Get(lat, lon, unit)
 		toolbox.EoE(err, "Error getting Weather Data: ")
 
 		// If verbose, show raw JSON data
-		if verbose {
+		if verbose > 2 {
 			fmt.Println("Weather Data:")
 			j, err := json.Marshal(weatherData)
 			toolbox.EoE(err, "Error marshalling JSON: ")
 			toolbox.PrettyJson(j)
 		}
 
-		// Print standard weather info
+		// Print weather info
 		fmt.Println()
-		fmt.Printf("📍: %s: %s - %s %v\n", location, weatherData.Current.Weather[0].Main, weatherData.Current.Weather[0].Description, openWeather.GetIconEmoji(weatherData.Current.Weather[0].Icon))
-		if verbose {
-			fmt.Println("Latitude:", lat)
-			fmt.Println("Longitude:", long)
+		if len(weatherData.Alerts) > 0 {
+			fmt.Println("🚨", weatherData.Alerts[0].Event, "🚨")
+			if verbose > 0 {
+				fmt.Println(weatherData.Alerts[0].Description)
+				fmt.Println()
+			}
 		}
-
-		// Print current time in the location's timezone
-		// Go snippet for local time conversion
-		utcSeconds := int64(weatherData.Current.Dt) // UTC-based seconds
-		offsetSecs := int(weatherData.TimezoneOffset)
-		// Create a *time.Location with the correct offset
-		loc := time.FixedZone("LocalTime", offsetSecs)
-		// Convert the UTC timestamp to “local time” by .In(loc)
-		localTime := time.Unix(utcSeconds, 0).In(loc)
-
-		fmt.Println("⌚️:", localTime.Format("Mon, Jan, 2 - 03:04 PM"), openWeather.GetTimeZoneTLA(weatherData.Timezone))
-		fmt.Printf("🌡️ : %.2f %s feels like %.2f %s \n", weatherData.Current.Temp, openWeather.GetUnitSymbol(unit), weatherData.Current.FeelsLike, openWeather.GetUnitSymbol(unit))
-		fmt.Printf("💨: %.2f %s\n", weatherData.Current.WindSpeed, openWeather.GetUnitSpeed(unit))
+		fmt.Printf("📍: %s: %s - %s %v\n", location, weatherData.Current.Weather[0].Main, weatherData.Current.Weather[0].Description, openWeather.GetIcon(weatherData.Current.Weather[0].Icon))
+		fmt.Println("ℹ️ :", weatherData.Daily[0].Summary)
+		fmt.Println("⌚️:", toolbox.LocalTime(weatherData.Current.Dt, weatherData.TimezoneOffset, weatherData.Timezone, ""), openWeather.GetMoonPhaseIcon(weatherData.Daily[0].MoonPhase))
+		fmt.Printf("🌡️ : %.2f %s", weatherData.Current.Temp, openWeather.GetUnitSymbol(unit))
+		if weatherData.Current.FeelsLike != weatherData.Current.Temp {
+			fmt.Printf(" (feels like %.2f %s)", weatherData.Current.FeelsLike, openWeather.GetUnitSymbol(unit))
+		}
+		fmt.Println()
+		if weatherData.Current.WindSpeed > 0 || verbose > 1 {
+			fmt.Printf("💨: %.2f %s\n", weatherData.Current.WindSpeed, openWeather.GetUnitSpeed(unit))
+		}
+		if weatherData.Current.Rain.OneH > 0 || verbose > 1 {
+			fmt.Printf("🌧️ : %.2f mm\n", weatherData.Current.Rain.OneH)
+		}
+		if weatherData.Current.Snow.OneH > 0 || verbose > 1 {
+			fmt.Printf("🌨️ : %.2f mm\n", weatherData.Current.Snow.OneH)
+		}
 		fmt.Printf("💧: %d%%\n", weatherData.Current.Humidity)
-		fmt.Printf("👓: %d m\n", weatherData.Current.Visibility)
-		fmt.Printf("🌅: %s %s\n", time.Unix(int64(weatherData.Current.Sunrise), 0).In(loc).Format("3:04 PM"), openWeather.GetTimeZoneTLA(weatherData.Timezone))
-		fmt.Printf("🌇: %s %s\n", time.Unix(int64(weatherData.Current.Sunset), 0).In(loc).Format("3:04 PM"), openWeather.GetTimeZoneTLA(weatherData.Timezone))
+		if weatherData.Current.Visibility < 10000 || verbose > 1 {
+			fmt.Printf("👓: %d m\n", weatherData.Current.Visibility)
+		}
+		fmt.Printf("🌅: %s\n", toolbox.LocalTime(weatherData.Current.Sunrise, weatherData.TimezoneOffset, weatherData.Timezone, "3:04 PM MST"))
+		fmt.Printf("🌇: %s\n", toolbox.LocalTime(weatherData.Current.Sunset, weatherData.TimezoneOffset, weatherData.Timezone, "3:04 PM"))
+		if weatherData.Current.Uvi > 3 || verbose > 1 {
+			fmt.Printf("🔆: %.2f\n", weatherData.Current.Uvi)
+		}
 	},
 }
 
@@ -88,7 +98,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+	rootCmd.PersistentFlags().CountVarP(&verbose, "verbose", "v", "Increase verbosity (-v, -vv, -vvv)")
 	rootCmd.PersistentFlags().StringVarP(&location, "location", "l", "", "location to get weather information")
 	rootCmd.PersistentFlags().StringVarP(&unit, "unit", "u", "metric", "unit of measurement (metric, imperial, standard)")
 
