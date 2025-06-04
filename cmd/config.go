@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	owm "github.com/seemywingz/go-openweather"
-	"github.com/seemywingz/go-toolbox" // still using for EoE, etc. if you like
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	owm "github.com/vekjja/go-openweather"
+	"github.com/vekjja/go-toolbox"
 )
 
 var (
