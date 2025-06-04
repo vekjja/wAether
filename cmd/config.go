@@ -31,7 +31,7 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 }
 
-// initConfig is called early on (from elsewhere) to set up Viper and read config
+// initConfig is called early on (from root cmd) to set up Viper and read config
 func initConfig(appName, configName string) {
 
 	configDir = filepath.Join(toolbox.HomeDir(), ".config", appName)
