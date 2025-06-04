@@ -51,10 +51,10 @@ var rootCmd = &cobra.Command{
 		fmt.Println()
 		if len(weatherData.Alerts) > 0 {
 			fmt.Println("🚨", weatherData.Alerts[0].Event, "🚨")
-			// if verbose > 0 {
-			fmt.Println(weatherData.Alerts[0].Description)
+			if verbose > 0 {
+				fmt.Println(weatherData.Alerts[0].Description)
+			}
 			fmt.Println()
-			// }
 		}
 		fmt.Printf("📍: %s: %s - %s %v\n", location, weatherData.Current.Weather[0].Main, weatherData.Current.Weather[0].Description, owm.Icon(weatherData.Current.Weather[0].Icon))
 		fmt.Println("ℹ️ :", weatherData.Daily[0].Summary)
