@@ -51,10 +51,10 @@ var rootCmd = &cobra.Command{
 		fmt.Println()
 		if len(weatherData.Alerts) > 0 {
 			fmt.Println("🚨", weatherData.Alerts[0].Event, "🚨")
-			// if verbose > 0 {
-			fmt.Println(weatherData.Alerts[0].Description)
-			fmt.Println()
-			// }
+			if verbose > 0 {
+				fmt.Println(weatherData.Alerts[0].Description)
+				fmt.Println()
+			}
 		}
 		fmt.Printf("📍: %s: %s - %s %v\n", location, weatherData.Current.Weather[0].Main, weatherData.Current.Weather[0].Description, owm.Icon(weatherData.Current.Weather[0].Icon))
 		fmt.Println("ℹ️ :", weatherData.Daily[0].Summary)
@@ -81,10 +81,12 @@ var rootCmd = &cobra.Command{
 		if verbose > 0 {
 			timeFormat = "3:04:05 PM MST"
 		}
-		fmt.Printf("🌅: %s\n", toolbox.TimeUTC(weatherData.Current.Sunrise, weatherData.TimezoneOffset, weatherData.Timezone, timeFormat))
-		fmt.Printf("🌇: %s\n", toolbox.TimeUTC(weatherData.Current.Sunset, weatherData.TimezoneOffset, weatherData.Timezone, timeFormat))
-		if weatherData.Current.Uvi > 3 || verbose > 0 {
-			fmt.Printf("🔆: %.2f\n", weatherData.Current.Uvi)
+		if verbose > 0 {
+			fmt.Printf("🌅: %s\n", toolbox.TimeUTC(weatherData.Current.Sunrise, weatherData.TimezoneOffset, weatherData.Timezone, timeFormat))
+			fmt.Printf("🌇: %s\n", toolbox.TimeUTC(weatherData.Current.Sunset, weatherData.TimezoneOffset, weatherData.Timezone, timeFormat))
+			if weatherData.Current.Uvi > 3 || verbose > 0 {
+				fmt.Printf("🔆: %.2f\n", weatherData.Current.Uvi)
+			}
 		}
 	},
 }
