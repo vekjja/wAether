@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -13,7 +12,6 @@ import (
 )
 
 var verbose int
-var lat, lon float64
 
 var rootCmd = &cobra.Command{
 	Use:   "wAether",
@@ -24,19 +22,18 @@ var rootCmd = &cobra.Command{
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 
+		if viper.GetString("location") == "" {
+			toolbox.EoE(fmt.Errorf("No Location set please run `waether config` or `waether --location \"[Provide a Location]\"`"))
+		}
+
 		// Get the geo data
-		geoData, err := toolbox.GetGeoData(viper.GetString("location"))
-		toolbox.EoE(err, "Error getting GeoData: ")
-		location := geoData[0].DisplayName
-
-		lat, err = strconv.ParseFloat(geoData[0].Lat, 64)
-		toolbox.EoE(err, "Error converting Latitude: ")
-
-		lon, err = strconv.ParseFloat(geoData[0].Lon, 64)
-		toolbox.EoE(err, "Error converting Longitude: ")
+		geoData, err := owm.GetGeoData(viper.GetString("location"), viper.GetString("api_key"))
+		if err != nil || len(geoData) == 0 {
+			toolbox.EoE(fmt.Errorf("Error Getting Geographical Date for Location: " + viper.GetString("location")))
+		}
 
 		// Get weather data
-		weatherData, err := owm.Get(lat, lon, viper.GetString("unit"), viper.GetString("api_key"))
+		weatherData, err := owm.Get(geoData[0].Lat, geoData[0].Lon, viper.GetString("unit"), viper.GetString("api_key"))
 		toolbox.EoE(err, "Error getting Weather Data: ")
 
 		// If vvverbose, show raw JSON data
@@ -56,7 +53,7 @@ var rootCmd = &cobra.Command{
 			}
 			fmt.Println()
 		}
-		fmt.Printf("📍: %s: %s - %s %v\n", location, weatherData.Current.Weather[0].Main, weatherData.Current.Weather[0].Description, owm.Icon(weatherData.Current.Weather[0].Icon))
+		fmt.Printf("📍: %s, %s, %s: %s - %s %v\n", geoData[0].Name, geoData[0].State, geoData[0].Country, weatherData.Current.Weather[0].Main, weatherData.Current.Weather[0].Description, owm.Icon(weatherData.Current.Weather[0].Icon))
 		fmt.Println("ℹ️ :", weatherData.Daily[0].Summary)
 		fmt.Println("⌚️:", toolbox.TimeUTC(weatherData.Current.Dt, weatherData.TimezoneOffset, weatherData.Timezone, ""), owm.MoonPhaseIcon(weatherData.Daily[0].MoonPhase))
 		fmt.Printf("🌡️ : %.2f %s", weatherData.Current.Temp, owm.UnitSymbol(viper.GetString("unit")))
@@ -98,6 +95,7 @@ func Execute() {
 
 func init() {
 	initConfig("waether", "config")
+
 	rootCmd.PersistentFlags().CountVarP(&verbose, "verbose", "v", "Increase verbosity (-v, -vv, -vvv)")
 
 	rootCmd.PersistentFlags().StringP("location", "l", viper.GetString("location"), "location to get weather data for")

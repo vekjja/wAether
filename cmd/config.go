@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	configName,
 	configDir,
 	configFile string
 )
@@ -106,7 +105,7 @@ func configure() {
 	viper.Set("unit", chosenUnit)
 
 	fmt.Println()
-	fmt.Println("Enter Your Location:")
+	fmt.Println("Enter Your Location: REQUIRED `City, State(Only for US), Counrty`")
 	location := toolbox.PromptInput("Location", viper.GetString("location"))
 	viper.Set("location", location)
 
