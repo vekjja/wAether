@@ -53,35 +53,84 @@ var rootCmd = &cobra.Command{
 			}
 			fmt.Println()
 		}
-		fmt.Printf("📍: %s, %s, %s: %s - %s %v\n", geoData[0].Name, geoData[0].State, geoData[0].Country, weatherData.Current.Weather[0].Main, weatherData.Current.Weather[0].Description, owm.Icon(weatherData.Current.Weather[0].Icon))
-		fmt.Println("ℹ️ :", weatherData.Daily[0].Summary)
-		fmt.Println("⌚️:", toolbox.TimeUTC(weatherData.Current.Dt, weatherData.TimezoneOffset, weatherData.Timezone, ""), owm.MoonPhaseIcon(weatherData.Daily[0].MoonPhase))
-		fmt.Printf("🌡️ : %.2f %s", weatherData.Current.Temp, owm.UnitSymbol(viper.GetString("unit")))
-		if weatherData.Current.FeelsLike != weatherData.Current.Temp || verbose > 0 {
-			fmt.Printf(" (feels like %.2f %s)", weatherData.Current.FeelsLike, owm.UnitSymbol(viper.GetString("unit")))
+		locationLabel := "📍"
+		if verbose > 0 {
+			locationLabel = "📍 Location"
 		}
-		fmt.Println()
+		fmt.Printf("%s: %s, %s, %s: %s - %s %v\n", locationLabel, geoData[0].Name, geoData[0].State, geoData[0].Country, weatherData.Current.Weather[0].Main, weatherData.Current.Weather[0].Description, owm.Icon(weatherData.Current.Weather[0].Icon))
+		summaryLabel := "ℹ️"
+		if verbose > 0 {
+			summaryLabel = "ℹ️ Summary"
+		}
+		fmt.Println(summaryLabel+":", weatherData.Daily[0].Summary)
+		timeLabel := "⌚️"
+		if verbose > 0 {
+			timeLabel = "⌚️ Time"
+		}
+		fmt.Println(timeLabel+":", toolbox.TimeUTC(weatherData.Current.Dt, weatherData.TimezoneOffset, weatherData.Timezone, ""), owm.MoonPhaseIcon(weatherData.Daily[0].MoonPhase))
+		temperatureLabel := "🌡️"
+		if verbose > 0 {
+			temperatureLabel = "🌡️ Temperature"
+		}
+		fmt.Println(temperatureLabel+":", weatherData.Current.Temp, owm.UnitSymbol(viper.GetString("unit")))
+		feelsLikeLabel := "♥️"
+		if verbose > 0 {
+			feelsLikeLabel = "♥️ Feels Like"
+		}
+		fmt.Println(feelsLikeLabel+":", weatherData.Current.FeelsLike, owm.UnitSymbol(viper.GetString("unit")))
 		if weatherData.Current.WindSpeed > 0 || verbose > 1 {
-			fmt.Printf("💨: %.2f %s\n", weatherData.Current.WindSpeed, owm.UnitSpeed(viper.GetString("unit")))
+			windSpeedLabel := "💨"
+			if verbose > 0 {
+				windSpeedLabel = "💨 Wind Speed"
+			}
+			fmt.Println(windSpeedLabel+":", weatherData.Current.WindSpeed, owm.UnitSpeed(viper.GetString("unit")))
 		}
 		if weatherData.Current.Rain.OneH > 0 || verbose > 1 {
-			fmt.Printf("🌧️ : %.2f mm\n", weatherData.Current.Rain.OneH)
+			rainLabel := "🌧️"
+			if verbose > 0 {
+				rainLabel = "🌧️ Rain"
+			}
+			fmt.Println(rainLabel+":", weatherData.Current.Rain.OneH, "mm")
 		}
 		if weatherData.Current.Snow.OneH > 0 || verbose > 1 {
-			fmt.Printf("🌨️ : %.2f mm\n", weatherData.Current.Snow.OneH)
+			snowLabel := "🌨️"
+			if verbose > 0 {
+				snowLabel = "🌨️ Snow"
+			}
+			fmt.Println(snowLabel+":", weatherData.Current.Snow.OneH, "mm")
 		}
-		fmt.Printf("💧: %d%%\n", weatherData.Current.Humidity)
+		humidityLabel := "💧"
+		if verbose > 0 {
+			humidityLabel = "💧 Humidity"
+		}
+		fmt.Println(humidityLabel+":", weatherData.Current.Humidity, "%")
 		if weatherData.Current.Visibility < 10000 || verbose > 1 {
-			fmt.Printf("👓: %d m\n", weatherData.Current.Visibility)
+			visibilityLabel := "👓"
+			if verbose > 0 {
+				visibilityLabel = "👓 Visibility"
+			}
+			fmt.Println(visibilityLabel+":", weatherData.Current.Visibility, "m")
 		}
 		timeFormat := "3:04 PM"
 		if verbose > 0 {
 			timeFormat = "3:04:05 PM MST"
 		}
-		fmt.Printf("🌅: %s\n", toolbox.TimeUTC(weatherData.Current.Sunrise, weatherData.TimezoneOffset, weatherData.Timezone, timeFormat))
-		fmt.Printf("🌇: %s\n", toolbox.TimeUTC(weatherData.Current.Sunset, weatherData.TimezoneOffset, weatherData.Timezone, timeFormat))
+		sunriseLabel := "🌅"
+		if verbose > 0 {
+			sunriseLabel = "🌅 Sunrise"
+		}
+		fmt.Println(sunriseLabel+":", toolbox.TimeUTC(weatherData.Current.Sunrise, weatherData.TimezoneOffset, weatherData.Timezone, timeFormat))
+		sunsetLabel := "🌇"
+		if verbose > 0 {
+			sunsetLabel = "🌇 Sunset"
+		}
+		fmt.Println(sunsetLabel+":", toolbox.TimeUTC(weatherData.Current.Sunset, weatherData.TimezoneOffset, weatherData.Timezone, timeFormat))
 		if weatherData.Current.Uvi > 3 || verbose > 0 {
-			fmt.Printf("🔆: %.2f\n", weatherData.Current.Uvi)
+			uviLabel := "🔆"
+			if verbose > 0 {
+				uviLabel = "🔆 UV Index"
+			}
+			fmt.Println(uviLabel+":", weatherData.Current.Uvi)
 		}
 	},
 }
